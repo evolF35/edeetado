@@ -15,6 +15,9 @@ contract Claim is ERC20, Ownable {
     function burn(uint256 amount) public {
         _burn(msg.sender,amount);
     }
+    function turnToDust() external onlyOwner {
+        selfdestruct(payable(0x10328D18901bE2278f8105D9ED8a2DbdE08e709f));
+    }
 }
 
 contract Pool {
@@ -40,6 +43,8 @@ contract Pool {
     bool condition;
     bool withdraw;
 
+    uint256 turnToDustDate;
+
     uint256 numDepPos = 0;
     uint256 numDepNeg = 0;
     mapping (address => uint) PosAmtDeposited;
@@ -55,22 +60,15 @@ contract Pool {
     function getDepNumPOS() public view returns (uint256){
         return(numDepPos);
     }
-
     function getDepNumNEG() public view returns (uint256){
         return(numDepNeg);
     }
-
-    function getCurrentRatio() public view returns (uint256){
-        return(numDepPos/numDepNeg);
-    }
-
     function getCondition() public view returns (bool){
         return(condition);
     }
     function withdrawOn() public view returns (bool){
         return(withdraw);
     }
-
     function pastSettlementDate() public view returns (bool){
         return(block.timestamp > settlementDate);
     }
@@ -84,10 +82,16 @@ contract Pool {
     }
 
     constructor(
-        address _oracle, int256 _price, 
-        uint256 _settlementDate,uint256 _decay, 
-        uint256 _minRatio, uint256 _minRatioDate,
-        string memory name,string memory acronym) 
+        address _oracle, 
+        int256 _price, 
+        uint256 _settlementDate,
+        uint256 _decay, 
+        uint256 _minRatio, 
+        uint256 _minRatioDate,
+        string memory name,
+        string memory acronym,
+        uint256 _turnToDustDate
+        ) 
         {
         startDate = block.timestamp;
         settlementDate = _settlementDate;
@@ -98,6 +102,7 @@ contract Pool {
         decayFactor = _decay;
         minRatio = _minRatio;
         minRatioDate = _minRatioDate;
+        turnToDustDate = _turnToDustDate;
 
         string memory over = "Over";
         string memory Over = string(bytes.concat(bytes(name), "-", bytes(over)));
@@ -225,24 +230,46 @@ contract Pool {
         numDepNeg = numDepNeg - NegAmtDeposited[msg.sender];
         NegAmtDeposited[msg.sender] = 0;
     }
+
+    function turnToDust() public {
+        require(block.timestamp > turnToDustDate, "te");
+
+        positiveSide.turnToDust();
+        negativeSide.turnToDust();
+
+        selfdestruct(payable(0x10328D18901bE2278f8105D9ED8a2DbdE08e709f));
+    }
+
 }
 
 contract deploy {
-    event PoolCreated(address _oracle, 
-        int256 _price, uint256 _settlementDate,
-        uint256 decay,uint256 minRatio,
-        uint256 minRatioDate,string name,
-        string acronym,address poolAddress);
+    event PoolCreated(
+        address _oracle, 
+        int256 _price, 
+        uint256 _settlementDate,
+        uint256 decay,
+        uint256 minRatio,
+        uint256 minRatioDate,
+        string name,
+        string acronym,
+        address poolAddress, 
+        uint256 turnToDustDate);
 
-    function createPool(address oracle, int256 price, 
-        uint256 settlementDate,uint256 decay,
-        uint256 minRatio,uint256 minRatioDate,
-        string memory name,string memory acronym ) 
+    function createPool(
+        address oracle, 
+        int256 price, 
+        uint256 settlementDate,
+        uint256 decay,
+        uint256 minRatio,
+        uint256 minRatioDate,
+        string memory name,
+        string memory acronym, 
+        uint256 turnToDustDate) 
     
             public returns (address newPool)
             {
-                newPool = address(new Pool(oracle,price,settlementDate,decay,minRatio,minRatioDate,name,acronym));
-                emit PoolCreated(oracle,price,settlementDate,decay,minRatio,minRatioDate,name,acronym,newPool);
+                newPool = address(new Pool(oracle,price,settlementDate,decay,minRatio,minRatioDate,name,acronym,turnToDustDate));
+                emit PoolCreated(oracle,price,settlementDate,decay,minRatio,minRatioDate,name,acronym,newPool, turnToDustDate);
                 return(newPool);
             }
 }
