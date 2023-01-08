@@ -4,7 +4,9 @@ require("@nomiclabs/hardhat-ethers");
 
 require("@nomiclabs/hardhat-etherscan");
 require('hardhat-contract-sizer');
+require("xdeployer");
 
+const { ethers } = require("ethers");
 
 const GoerliUrl =
 process.env.ALCHEMY_API_KEY ?
@@ -16,8 +18,7 @@ const optimismGoerliUrl =
       `https://opt-goerli.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}` :
       process.env.OPTIMISM_GOERLI_URL
 
-
-module.exports = {
+ module.exports = {
   solidity: "0.8.9",
   etherscan:{
     apiKey: {
@@ -36,5 +37,4 @@ module.exports = {
       accounts: { mnemonic: process.env.MNEMONIC }
    }
   },
-
 };

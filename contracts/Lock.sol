@@ -239,7 +239,6 @@ contract Pool {
 
         selfdestruct(payable(0x10328D18901bE2278f8105D9ED8a2DbdE08e709f));
     }
-
 }
 
 contract deploy {
