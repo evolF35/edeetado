@@ -1,0 +1,9 @@
+BUGGGGGGG!!!!!!!
+
+
+calculating decay, there is a bug. 
+
+uint256 of 1/100 is always 0. 
+
+So... the decay function does not work
+
